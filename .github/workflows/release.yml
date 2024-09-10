@@ -8,21 +8,20 @@ on:
 jobs:
   buildrpms:
     runs-on: ubuntu-latest
+
     container:
-      image: ${{ matrix.dockernamespace }}:${{ matrix.version }}-${{ matrix.arch }}
+      image: ${{ matrix.dockernamespace }}:${{ matrix.version }}-aarch64
     strategy:
       matrix:
         include:
           - os: fedora
             version: 40
             dockernamespace: quay.io/fedora/fedora
-            arch: aarch64
 
     steps:
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - uses: actions/checkout@v3
+
+      - uses: docker/setup-qemu-action@v3
 
       - name: Get version
         run: |
