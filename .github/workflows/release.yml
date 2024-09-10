@@ -8,22 +8,24 @@ on:
 jobs:
   buildrpms:
     runs-on: ubuntu-latest
-
-    container:
-      image: ${{ matrix.dockernamespace }}:${{ matrix.version }}-aarch64
     strategy:
       matrix:
         include:
           - os: fedora
             version: 40
+            arch: aarch64
             dockernamespace: quay.io/fedora/fedora
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: setup qemu
-        run: apt update && apt install --yes binfmt-support qemu-user-static
+      # Install qemu-user-static on the host for cross-platform support
+      - name: Setup QEMU
+        run: |
+          sudo apt-get update && sudo apt-get install --yes binfmt-support qemu-user-static
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
+      # Load environment variables
       - name: Get version
         run: |
           echo "VERSION=$(grep ^VERSION Makefile | awk -F:= '{print $2}' | tr -d ' ')" >> $GITHUB_ENV
@@ -44,21 +46,33 @@ jobs:
         run: |
           echo "OSVERSION=${{ matrix.version }}" >> $GITHUB_ENV
 
-      - name: Run CI
-        run: ci/${{ matrix.os }}.sh
+      # Run the CI script inside the Docker container
+      - name: Run CI script inside Docker container
+        run: |
+          docker run --rm \
+            --platform linux/arm64 \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            ${{ matrix.dockernamespace }}:${{ matrix.version }}-aarch64 \
+            bash -c "ci/${{ matrix.os }}.sh"
 
+      # Rename files for clarity
       - name: Rename files
-        run: ls -la
-      - run: mv displaylink-${{ env.VERSION }}-${{ env.RELEASE }}${{ env.EVDISOURCE }}.src.rpm ${{ matrix.os }}-${{ matrix.version }}-displaylink-${{ env.VERSION }}-${{ env.RELEASE }}${{ env.EVDISOURCE }}.src.rpm
-      - run: mv x86_64/displaylink-${{ env.VERSION }}-${{ env.RELEASE }}${{ env.EVDISOURCE }}.x86_64.rpm ${{ matrix.os }}-${{ matrix.version }}-displaylink-${{ env.VERSION }}-${{ env.RELEASE }}${{ env.EVDISOURCE }}.x86_64.rpm
-      - run: chown `id -u`:`id -g` -R .
+        run: |
+          mv displaylink-${{ env.VERSION }}-${{ env.RELEASE }}${{ env.EVDISOURCE }}.src.rpm ${{ matrix.os }}-${{ matrix.version }}-displaylink-${{ env.VERSION }}-${{ env.RELEASE }}${{ env.EVDISOURCE }}.src.rpm
+          mv aarch64/displaylink-${{ env.VERSION }}-${{ env.RELEASE }}${{ env.EVDISOURCE }}.aarch64.rpm ${{ matrix.os }}-${{ matrix.version }}-displaylink-${{ env.VERSION }}-${{ env.RELEASE }}${{ env.EVDISOURCE }}.aarch64.rpm
 
+      - run: |
+          chown $(id -u):$(id -g) -R .
+
+      # Upload artifacts
       - name: Upload RPM
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}-${{ matrix.version }}-displaylink-${{ env.VERSION }}-${{ env.RELEASE }}
           path: ${{ matrix.os }}-${{ matrix.version }}-displaylink-${{ env.VERSION }}-${{ env.RELEASE }}.*.rpm
 
+      # Upload assets to release
       - name: Upload Assets To Release
         uses: xresloader/upload-to-github-release@master
         env:
