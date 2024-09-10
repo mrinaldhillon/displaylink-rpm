@@ -16,7 +16,7 @@ jobs:
           - os: fedora
             version: 40
             dockernamespace: quay.io/fedora/fedora
-            arch: arm64
+            arch: aarch64
 
     steps:
       - name: Set up QEMU
