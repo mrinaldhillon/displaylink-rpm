@@ -14,8 +14,8 @@ jobs:
       matrix:
         include:
           - os: fedora
-            version: 40
-            dockernamespace: quay.io/fedora/fedora:40-aarch64
+            version: 40-aarch64
+            dockernamespace: quay.io/fedora/fedora
 
     steps:
       - uses: actions/checkout@v3
