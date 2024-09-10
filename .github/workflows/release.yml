@@ -19,9 +19,10 @@ jobs:
             dockernamespace: quay.io/fedora/fedora
 
     steps:
-      - uses: docker/setup-qemu-action@v3
-
       - uses: actions/checkout@v3
+
+      - name: setup qemu
+        run: apt update && apt install --yes binfmt-support qemu-user-static
 
       - name: Get version
         run: |
