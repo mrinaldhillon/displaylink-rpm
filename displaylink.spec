@@ -61,9 +61,9 @@ Requires:   dkms
 Requires:   %{kernel_pkg_name} >= 4.15, %{kernel_pkg_name}-devel >= 4.15
 Requires:   make
 Requires:   libusbx
-Requires:   xorg-x11-server-Xorg >= 1.16
-Conflicts:  mutter < 3.32
-Conflicts:  xorg-x11-server-Xorg = 1.20.1
+#Requires:   xorg-x11-server-Xorg >= 1.16
+#Conflicts:  mutter < 3.32
+#Conflicts:  xorg-x11-server-Xorg = 1.20.1
 
 Provides:   bundled(libevdi) = %{version}
 
